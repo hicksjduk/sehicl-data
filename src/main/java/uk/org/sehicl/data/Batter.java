@@ -7,12 +7,12 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
 @JsonPropertyOrder(value =
 { "runs", "out", "notes" })
-public class Batsman extends Performance implements Comparable<Batsman>
+public class Batter extends Performance implements Comparable<Batter>
 {
-    private static final Comparator<Batsman> COMPARATOR = Comparator
-            .comparingInt(Batsman::getRunsScored)
+    private static final Comparator<Batter> COMPARATOR = Comparator
+            .comparingInt(Batter::getRunsScored)
             .reversed()
-            .thenComparing(Batsman::isOut);
+            .thenComparing(Batter::isOut);
 
     private int runsScored;
     private boolean out;
@@ -40,7 +40,7 @@ public class Batsman extends Performance implements Comparable<Batsman>
     }
 
     @Override
-    public int compareTo(Batsman o)
+    public int compareTo(Batter o)
     {
         return COMPARATOR.compare(this, o);
     }

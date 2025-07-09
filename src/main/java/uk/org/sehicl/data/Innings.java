@@ -11,7 +11,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
 @JsonPropertyOrder(value =
-{ "runsScored", "wicketsLost", "ballsBowled", "batsman", "bowler" })
+{ "runsScored", "wicketsLost", "ballsBowled", "batters", "batsman", "bowlers" })
 public class Innings
 {
     private int runsScored;
@@ -69,17 +69,23 @@ public class Innings
         return performances;
     }
 
-    @JacksonXmlProperty(localName = "batsman")
+    @JacksonXmlProperty(localName = "batter")
     @JacksonXmlElementWrapper(useWrapping = false)
-    public List<Batsman> getBatsmen()
+    public List<Batter> getBatters()
     {
-        return filterPerformances(Batsman.class);
+        return filterPerformances(Batter.class);
+    }
+
+    @JacksonXmlProperty(localName = "batter")
+    public void addBatter(Batter batter)
+    {
+        performances.add(batter);
     }
 
     @JacksonXmlProperty(localName = "batsman")
-    public void addBatsman(Batsman batsman)
+    public void addBatsman(Batter batter)
     {
-        performances.add(batsman);
+        performances.add(batter);
     }
 
     @JacksonXmlProperty(localName = "bowler")
