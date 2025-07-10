@@ -9,10 +9,11 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.Test;
-import org.opentest4j.AssertionFailedError;
 import org.xmlunit.builder.DiffBuilder;
 import org.xmlunit.builder.Input;
 import org.xmlunit.diff.Comparison;
@@ -65,8 +66,14 @@ class MarshalUnmarshalTest
 
     boolean isBatterBatsmanDifference(Stream<String> values)
     {
-        var pattern = Pattern.compile(".*bat(ters?|sm[ae]n).*");
-        return values.map(pattern::matcher).allMatch(Matcher::matches);
+        var pattern = Pattern.compile(".*(bat(?:ters?|sm[ae]n)).*");
+        var extracted = values
+                .map(pattern::matcher)
+                .filter(Matcher::matches)
+                .map(m -> m.group(1))
+                .sorted()
+                .collect(Collectors.joining());
+        return Stream.of("batsmanbatter", "batsmenbatters").anyMatch(extracted::equals);
     }
 
     @Test
@@ -79,34 +86,29 @@ class MarshalUnmarshalTest
                 .writeValue(w, model);
         var expectedLines = new String(dataFileStream(ymlFileName).readAllBytes()).lines();
         var actualLines = w.toString().lines();
-        compareLineByLine(expectedLines, actualLines, (exp, act, msg) ->
-        {
-            try
-            {
-                assertThat(exp).as(msg).isEqualTo(act);
-            }
-            catch (AssertionFailedError ex)
-            {
-                if (!isBatterBatsmanDifference(Stream.of(act, exp)))
-                    throw ex;
-            }
-        });
-    }
-    
-    interface Comparer {
-        void compare(String expected, String actual, String message);
+        compareLineByLine(expectedLines, actualLines,
+                (exp, act, descr) -> assertThat(exp)
+                        .as(descr)
+                        .has(anyOf(new Condition<>(act::equals, "Equality"),
+                                new Condition<>(o -> isBatterBatsmanDifference(Stream.of(exp, act)),
+                                        "Batter/batsman"))));
     }
 
-    void compareLineByLine(Stream<String> expected, Stream<String> actual,
-            Comparer comparer)
+    interface Comparer
+    {
+        void compare(String expected, String actual, String descr);
+    }
+
+    void compareLineByLine(Stream<String> expected, Stream<String> actual, Comparer comparer)
     {
         var actualLines = actual.iterator();
         var lineNo = new AtomicInteger();
         expected.forEach(exp ->
         {
-            var msg = "On line %d".formatted(lineNo.incrementAndGet());
+            assertThat(actualLines.hasNext());
+            var descr = "On line %d".formatted(lineNo.incrementAndGet());
             var act = actualLines.next();
-            comparer.compare(exp, act, msg);
+            comparer.compare(exp, act, descr);
         });
         assertThat(!actualLines.hasNext());
     }
